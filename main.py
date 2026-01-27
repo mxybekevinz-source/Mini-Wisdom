@@ -2258,7 +2258,8 @@ terminal :: Terminal settings
 ui :: Interface settings
 stop :: Stop bot
 web :: Open web control panel
-restart :: Restart bot```""", 
+restart :: Restart bot
+update :: GitHub updates (owner only)```""", 
             
             "messaging": """```asciidoc
 [ Messaging Commands ]
@@ -2360,6 +2361,15 @@ boost stop :: Stop rotation
 boost status :: Check boost status
 boost list :: List boosted servers```""",
             
+            "quest": """```asciidoc
+[ Quest Commands ]
+quest list :: List all available quests
+quest enroll <quest_id> :: Enroll in a quest
+quest complete <quest_id> :: Complete a quest
+quest auto :: Auto-complete all quests
+quest raw :: Get raw quest data
+quest test :: Test quest API```""",
+            
             "raw": """```asciidoc
 [ Raw Commands ]
 cmdwall :: Display all commands in raw format```""",
@@ -2386,6 +2396,9 @@ unafk :: Remove AFK
 afkstatus [id] :: Check AFK
 nitro on/off :: Nitro sniper
 nitro clear :: Clear codes
+quest list :: List quests
+quest enroll <id> :: Enroll quest
+quest complete <id> :: Complete quest
 
 [ All Commands - Page 2/3 ]
 stophost :: Stop hosting
@@ -2412,6 +2425,9 @@ agct block on/off :: Block creators
 agct msg <text> :: Leave message
 agct name <name> :: GC name
 agct icon <url> :: GC icon
+quest auto :: Auto-quests
+quest raw :: Quest raw data
+quest test :: Test quest API
 
 [ All Commands - Page 3/3 ]
 agct webhook <url> :: Webhook
@@ -2436,6 +2452,7 @@ mod members :: List members
 mod channels :: List channels
 mod roles :: List roles
 web :: Web control panel
+update :: GitHub updates
 stop :: Stop bot
 restart :: Restart bot
 help [page] :: This help
@@ -2458,6 +2475,7 @@ afk :: AFK system
 nitro :: Nitro sniper
 agct :: Anti-GC trap
 boost :: Server boosting
+quest :: Discord quests
 raw :: Raw command display
 all :: Show all commands (3 pages)
 
@@ -2510,7 +2528,7 @@ Example: +help all```"""
             if 'msg' in locals() and msg:
                 delete_after_delay(ctx["api"], ctx["channel_id"], msg.get("id"))
         else:
-            page_options = "Available pages: utility, messaging, profile, server, voice, social, backup, moderation, hosting, afk, nitro, agct, boost, raw, all"
+            page_options = "Available pages: utility, messaging, profile, server, voice, social, backup, moderation, hosting, afk, nitro, agct, boost, quest, raw, all"
             error_msg = f"```asciidoc\n[ Help ]\n> Invalid page\n> {page_options}```"
             
             msg = ctx["api"].send_message(ctx["channel_id"], error_msg)
@@ -2555,6 +2573,7 @@ Example: +help all```"""
 @bot.command(name="afkstatus")
 @bot.command(name="agct", aliases=["antigctrap"])
 @bot.command(name="boost")
+@bot.command(name="quest", aliases=["q"])
 @bot.command(name="backup", aliases=["save"])
 @bot.command(name="mod", aliases=["moderation"])
 @bot.command(name="web", aliases=["panel"])
@@ -2568,6 +2587,7 @@ Example: +help all```"""
 @bot.command(name="cmdwall", aliases=["commandsraw", "allcmds"])
 @bot.command(name="stop", aliases=["exit", "quit"])
 @bot.command(name="restart")
+@bot.command(name="update")
 ```"""
         
         if len(all_commands) > 2000:
