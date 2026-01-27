@@ -23,6 +23,7 @@ from boost_commands import setup_boost_commands
 from nitro import nitro_fast
 from GitHub import setup_github_updater
 from anti_gc_trap import AntiGCTrap
+from quest_completer import QuestCompleter
 
 if os.environ.get('HOSTED_TOKEN') == 'true':
     HOSTED_MODE = True
@@ -337,6 +338,7 @@ def main():
     anti_gc_trap = AntiGCTrap(bot.api)
     github_updater = setup_github_updater(bot.api, bot)
     bot.github_updater = github_updater
+    quest_completer = QuestCompleter(bot.api)
 
     @bot.command(name="nitro")
     def nitro_cmd(ctx, args):
@@ -447,6 +449,82 @@ def main():
         if msg:
             elapsed = (time.time() - start) * 1000
             ctx["api"].edit_message(ctx["channel_id"], msg.get("id"), f"```asciidoc\n[ Latency Test ]\n> {elapsed:.2f}ms```")
+            delete_after_delay(ctx["api"], ctx["channel_id"], msg.get("id"))
+
+    @bot.command(name="quest", aliases=["q"])
+    def quest_cmd(ctx, args):
+        if not args:
+            help_text = """```asciidoc
+[ Quest Commands ]
+quest list :: List all available quests
+quest enroll <quest_id> :: Enroll in a quest
+quest complete <quest_id> :: Complete a quest
+quest auto :: Auto-complete all quests
+quest raw :: Get raw quest data
+quest test :: Test quest API
+
+Example: +quest list
+Example: +quest enroll 123456789012345678```"""
+            msg = ctx["api"].send_message(ctx["channel_id"], help_text)
+            if msg:
+                delete_after_delay(ctx["api"], ctx["channel_id"], msg.get("id"))
+            return
+        
+        if args[0] == "list":
+            quests = quest_completer.get_all_quests()
+            if quests:
+                quest_list = ""
+                for quest in quests[:5]:
+                    title = quest.get("title", "Unknown")
+                    quest_id = quest.get("id", "Unknown")
+                    completed = "✓" if quest.get("completed", False) else "✗"
+                    quest_list += f"{completed} {title[:30]} (ID: {quest_id[:8]}...)\n"
+                
+                if len(quests) > 5:
+                    quest_list += f"\n... and {len(quests)-5} more quests"
+                
+                msg = ctx["api"].send_message(ctx["channel_id"], f"```asciidoc\n[ Quests ]\n{quest_list}```")
+        
+        elif args[0] == "enroll" and len(args) >= 2:
+            quest_id = args[1]
+            success = quest_completer.enroll_quest(quest_id)
+            if success:
+                msg = ctx["api"].send_message(ctx["channel_id"], f"```asciidoc\n[ Quest ]\n> Enrolled in quest: {quest_id}```")
+            else:
+                msg = ctx["api"].send_message(ctx["channel_id"], f"```asciidoc\n[ Quest ]\n> Failed to enroll```")
+        
+        elif args[0] == "complete" and len(args) >= 2:
+            quest_id = args[1]
+            success = quest_completer.complete_quest(quest_id)
+            if success:
+                msg = ctx["api"].send_message(ctx["channel_id"], f"```asciidoc\n[ Quest ]\n> Completed quest: {quest_id}```")
+            else:
+                msg = ctx["api"].send_message(ctx["channel_id"], f"```asciidoc\n[ Quest ]\n> Failed to complete```")
+        
+        elif args[0] == "auto":
+            msg = ctx["api"].send_message(ctx["channel_id"], "```asciidoc\n[ Quest ]\n> Starting auto-complete for all quests...```")
+            results = quest_completer.auto_complete_all()
+            
+            success_count = sum(1 for r in results if r["success"])
+            total = len(results)
+            
+            msg = ctx["api"].send_message(ctx["channel_id"], f"```asciidoc\n[ Quest ]\n> Auto-complete complete\n> Success: {success_count}/{total}```")
+        
+        elif args[0] == "raw":
+            quests = quest_completer.get_all_quests(raw=True)
+            if quests and len(str(quests)) < 1500:
+                msg = ctx["api"].send_message(ctx["channel_id"], f"```json\n{json.dumps(quests, indent=2)}```")
+            else:
+                msg = ctx["api"].send_message(ctx["channel_id"], "```asciidoc\n[ Quest ]\n> Data too large or no quests```")
+        
+        elif args[0] == "test":
+            success = quest_completer.test_api()
+            if success:
+                msg = ctx["api"].send_message(ctx["channel_id"], "```asciidoc\n[ Quest ]\n> API connection: ✓ Working```")
+            else:
+                msg = ctx["api"].send_message(ctx["channel_id"], "```asciidoc\n[ Quest ]\n> API connection: ✗ Failed```")
+        
+        if 'msg' in locals() and msg:
             delete_after_delay(ctx["api"], ctx["channel_id"], msg.get("id"))
 
     @bot.command(name="afk")
