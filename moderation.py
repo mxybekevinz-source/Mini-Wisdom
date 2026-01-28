@@ -12,8 +12,8 @@ class ModerationManager:
         success_count = 0
         for user_id in user_ids:
             try:
-                response = self.api.request("DELETE", f"/guilds/{guild_id}/members/{user_id}")
-                if response and response.status_code in [200, 204]:
+                response = self.api.kick_member(guild_id, user_id)
+                if response:
                     success_count += 1
                 time.sleep(0.5)
             except:
@@ -24,8 +24,8 @@ class ModerationManager:
         success_count = 0
         for user_id in user_ids:
             try:
-                response = self.api.request("PUT", f"/guilds/{guild_id}/bans/{user_id}", data={"delete_message_days": delete_days})
-                if response and response.status_code in [200, 204]:
+                response = self.api.ban_member(guild_id, user_id, delete_days)
+                if response:
                     success_count += 1
                 time.sleep(0.5)
             except:
@@ -36,8 +36,8 @@ class ModerationManager:
         success_count = 0
         for channel_id in channel_ids:
             try:
-                response = self.api.request("DELETE", f"/channels/{channel_id}")
-                if response and response.status_code in [200, 204]:
+                response = self.api.delete_channel(channel_id)
+                if response:
                     success_count += 1
                 time.sleep(0.3)
             except:
@@ -48,8 +48,8 @@ class ModerationManager:
         success_count = 0
         for role_id in role_ids:
             try:
-                response = self.api.request("DELETE", f"/guilds/{guild_id}/roles/{role_id}")
-                if response and response.status_code in [200, 204]:
+                response = self.api.delete_role(guild_id, role_id)
+                if response:
                     success_count += 1
                 time.sleep(0.3)
             except:
@@ -87,35 +87,19 @@ class ModerationManager:
         return False
     
     def get_members(self, guild_id, limit=1000):
-        members = []
-        after = None
-        
-        while len(members) < limit:
-            params = {"limit": 100}
-            if after:
-                params["after"] = after
-            
-            response = self.api.request("GET", f"/guilds/{guild_id}/members", params=params)
-            if not response or response.status_code != 200:
-                break
-            
-            batch = response.json()
-            if not batch:
-                break
-            
-            members.extend(batch)
-            after = batch[-1]["user"]["id"]
-            
-            if len(batch) < 100:
-                break
-        
-        return members[:limit]
+        try:
+            return self.api.get_guild_members(guild_id, limit)
+        except:
+            return []
     
     def get_channels(self, guild_id):
-        return self.api.get_channels(guild_id)
+        try:
+            return self.api.get_guild_channels(guild_id)
+        except:
+            return []
     
     def get_roles(self, guild_id):
-        response = self.api.request("GET", f"/guilds/{guild_id}/roles")
-        if response and response.status_code == 200:
-            return response.json()
-        return []
+        try:
+            return self.api.get_guild_roles(guild_id)
+        except:
+            return []
