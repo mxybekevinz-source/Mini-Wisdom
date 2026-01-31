@@ -25,7 +25,7 @@ class SuperReact:
             if len(parts) >= 2:
                 emoji_name = parts[1]
                 emoji_id = parts[2] if len(parts) > 2 else parts[1]
-                encoded_emoji = f"{emoji_name}:{emoji_id}"
+                encoded_emoji = f"{emoji_name}%3A{emoji_id}"
             else:
                 encoded_emoji = url_quote(emoji)
         else:
@@ -39,23 +39,38 @@ class SuperReact:
             headers = self.api.header_spoofer.get_headers()
             headers.update({
                 "referer": f"https://discord.com/channels/@me/{channel_id}",
-                "x-context-properties": "eyJsb2NhdGlvbiI6Ik1lc3NhZ2UgUmVhY3Rpb24gUGlja2VyIiwidHlwZSI6MX0="
+                "x-context-properties": "eyJsb2NhdGlvbiI6Ik1lc3NhZ2UgUmVhY3Rpb24gUGlja2VyIiwidHlwZSI6MX0=",
+                "x-discord-locale": "en-US",
+                "x-super-properties": headers.get("x-super-properties"),
+                "authorization": self.token
             })
             
-            params = {
-                "location": "Message Reaction Picker",
-                "type": "1",
-                "burst": "1"
+            burst_payload = {
+                "burst": True,
+                "emoji": {
+                    "name": emoji if not (emoji.startswith("<a:") or emoji.startswith("<:")) else emoji.replace('<', '').replace('>', '').split(':')[1],
+                    "id": None if not (emoji.startswith("<a:") or emoji.startswith("<:")) else emoji.replace('<', '').replace('>', '').split(':')[2]
+                },
+                "message_id": message_id,
+                "channel_id": channel_id,
+                "type": 1,
+                "location": "Message Reaction Picker"
             }
             
-            response = self.api.request("PUT", 
-                f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded_emoji}/@me",
-                params=params,
-                headers=headers
+            url = f"https://discord.com/api/v9/channels/{channel_id}/messages/{message_id}/reactions/{encoded_emoji}/@me"
+            
+            response = self.api.session.put(
+                url,
+                headers=headers,
+                params={"burst": "1", "type": "1", "location": "Message Reaction Picker"},
+                json=burst_payload
             )
             
             if response and response.status_code == 204:
+                print(f"[SUPER REACT]: Added super reaction to {message_id}")
                 return True
+            
+            print(f"[ERROR]: Super react failed. Status: {response.status_code if response else 'No response'}")
             return False
             
         except Exception as e:
