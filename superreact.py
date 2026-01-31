@@ -4,6 +4,7 @@ import threading
 import concurrent.futures
 import tls_client
 import random
+import base64
 import re
 from urllib.parse import quote as url_quote
 
