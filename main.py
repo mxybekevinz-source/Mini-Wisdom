@@ -2865,6 +2865,12 @@ Note: Only accessible from your computer```""")
     original_process_message = bot._handle_message
     
     def new_process_message(message_data):
+        content = message_data.get("content", "")
+        prefix = bot.prefix
+        
+        if content.startswith(prefix):
+            delete_command_message(bot.api, message_data.get("channel_id"), message_data.get("id"))
+        
         if check_for_github_updates(message_data):
             return
         
@@ -2888,12 +2894,6 @@ Note: Only accessible from your computer```""")
         if author_id in super_react.ssr_targets:
             for emoji in super_react.ssr_targets[author_id]:
                 super_react.executor.submit(super_react._react_single, guild_id, channel_id, msg_id, emoji)
-        
-        content = message_data.get("content", "")
-        prefix = bot.prefix
-        
-        if content.startswith(prefix):
-            delete_command_message(bot.api, message_data.get("channel_id"), message_data.get("id"))
         
         if content:
             author_id = message_data.get("author", {}).get("id", "")
@@ -2929,6 +2929,7 @@ Note: Only accessible from your computer```""")
 if __name__ == "__main__":
 
     main()
+
 
 
 
