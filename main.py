@@ -2785,6 +2785,8 @@ Note: Only accessible from your computer```""")
         if anti_gc_trap.check_gc_creation(message_data):
             pass 
         
+        super_react.handle_message(message_data)
+        
         content = message_data.get("content", "")
         prefix = bot.prefix
         
@@ -2825,5 +2827,6 @@ Note: Only accessible from your computer```""")
 if __name__ == "__main__":
 
     main()
+
 
 
